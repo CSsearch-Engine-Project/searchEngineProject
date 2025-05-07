@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @NoArgsConstructor
@@ -17,8 +16,8 @@ public class SearchKeywordSaveRequestDto {
     private String concept;
     private String intermediate;
     private String advanced;
-    private Map<String, String> level;
     private List<String> sources;
+    private String content;
 
     public static SearchKeyword of(SearchKeywordSaveRequestDto dto) {
         return SearchKeyword.builder()
@@ -27,8 +26,8 @@ public class SearchKeywordSaveRequestDto {
                 .concept(dto.getConcept())
                 .intermediate(dto.getIntermediate())
                 .advanced(dto.getAdvanced())
-                .level(dto.getLevel())
                 .sources(dto.getSources())
+                .content(dto.getContent())
                 .searchCount(0)
                 .build();
     }

@@ -1,38 +1,56 @@
 package kr.co.searchproject.loader;
 
-import org.springframework.stereotype.Component;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.InputStream;
-import java.util.List;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.co.searchproject.domain.SearchKeyword;
 import kr.co.searchproject.repository.SearchKeywordRepository;
-import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Component;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 @Component
-public class DataLoader {
+@RequiredArgsConstructor
+public class DataLoader implements CommandLineRunner {
 
-    private final SearchKeywordRepository repo;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final SearchKeywordRepository searchKeywordRepository;
+    private final ObjectMapper objectMapper;
 
-    public DataLoader(SearchKeywordRepository repo) {
-        this.repo = repo;
-    }
+    @Override
+    public void run(String... args) throws Exception {
+        if (searchKeywordRepository.count() == 0) {
+            InputStream inputStream = new ClassPathResource("data/concepts.json").getInputStream();
+            List<Map<String, Object>> concepts = objectMapper.readValue(
+                    inputStream, new TypeReference<List<Map<String, Object>>>() {});
 
-    @PostConstruct
-    public void load() throws Exception {
-        // resources/data/concepts.json 읽기
-        InputStream is = getClass().getResourceAsStream("/data/concepts.json");
-        if (is == null) {
-            throw new IllegalStateException("concepts.json 파일을 찾을 수 없습니다.");
+            for (Map<String, Object> concept : concepts) {
+                String keyword = (String) concept.get("keyword");
+                String topic = (String) concept.get("topic");
+
+                @SuppressWarnings("unchecked")
+                Map<String, String> level = (Map<String, String>) concept.get("level");
+
+                @SuppressWarnings("unchecked")
+                List<String> sources = (List<String>) concept.get("sources");
+
+                SearchKeyword searchKeyword = SearchKeyword.builder()
+                        .keyword(keyword)
+                        .topic(topic)
+                        .concept(level.get("concept"))
+                        .intermediate(level.get("intermediate"))
+                        .advanced(level.get("advanced"))
+                        .sources(sources)
+                        .searchCount(1)
+                        .build();
+
+                searchKeywordRepository.save(searchKeyword);
+            }
+
+            System.out.println("데이터 로드 완료: " + concepts.size() + "개 항목");
         }
-
-        // JSON → List<SearchKeyword> 매핑
-        List<SearchKeyword> list = mapper.readValue(is, new TypeReference<List<SearchKeyword>>() {});
-
-        // Elasticsearch에 일괄 저장
-        repo.saveAll(list);
-        System.out.println("=== Elasticsearch에 " + list.size() + "건 색인 완료 ===");
     }
 }

@@ -23,4 +23,11 @@ public class SearchKeywordService {
         return searchKeywordRepository.findByKeywordContaining(keyword);
     }
 
+    public void incrementSearchCount(String id) {
+        searchKeywordRepository.findById(id).ifPresent(keyword -> {
+            keyword.incrementSearchCount();
+            searchKeywordRepository.save(keyword);
+        });
+    }
+
 }
