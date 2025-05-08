@@ -26,7 +26,7 @@ public class SearchKeywordController {
     }
 
     @GetMapping("/api/search")
-    public List<SearchKeyword> search(@RequestParam String keyword) {
+    public List<SearchKeyword> search(@RequestParam(name = "keyword") String keyword) {
         List<SearchKeyword> results = searchKeywordService.findByKeywordContaining(keyword);
         if (results != null && !results.isEmpty()) {
             for (SearchKeyword searchKeyword : results) {
